@@ -89,6 +89,46 @@ async function createTransaction(req, res) {
 
     await t.commit();
 
+    // Tự động kiểm tra cảnh báo ngân sách
+    if (type === 'expense') {
+      try {
+        const Budget = require('../models/Budget');
+        const Notification = require('../models/Notification');
+        const txDate = transaction_date || new Date().toISOString().split('T')[0];
+        const budget = await Budget.findOne({
+          where: {
+            user_id: req.user.id,
+            category_id,
+            period_start: { [Op.lte]: txDate },
+            period_end: { [Op.gte]: txDate },
+          },
+          include: [{ model: Category, attributes: ['name'] }],
+        });
+
+        if (budget) {
+          const totalSpent = (await Transaction.sum('amount', {
+            where: {
+              user_id: req.user.id,
+              category_id,
+              type: 'expense',
+              transaction_date: { [Op.between]: [budget.period_start, budget.period_end] },
+            },
+          })) || 0;
+
+          if (totalSpent > parseFloat(budget.limit_amount)) {
+            await Notification.create({
+              user_id: req.user.id,
+              title: 'Cảnh báo vượt ngân sách!',
+              message: `Chi tiêu danh mục "${budget.Category?.name || 'Chi tiêu'}" đạt ${totalSpent.toLocaleString('vi-VN')} đ, vượt hạn mức ${parseFloat(budget.limit_amount).toLocaleString('vi-VN')} đ.`,
+              type: 'budget_warning',
+            });
+          }
+        }
+      } catch (checkErr) {
+        console.error('Lỗi kiểm tra ngân sách:', checkErr);
+      }
+    }
+
     return res.status(201).json({ transaction: newTransaction, newWalletBalance: wallet.balance });
   } catch (error) {
     await t.rollback();

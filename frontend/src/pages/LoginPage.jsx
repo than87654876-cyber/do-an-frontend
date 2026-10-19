@@ -15,6 +15,10 @@ import {
   IconButton,
   Tabs,
   Tab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
 import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded'
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
@@ -46,6 +50,14 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Quên mật khẩu dialog state
+  const [forgotOpen, setForgotOpen] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotPassword, setForgotPassword] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotMsg, setForgotMsg] = useState('')
+  const [forgotErr, setForgotErr] = useState('')
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -370,6 +382,23 @@ export default function LoginPage() {
                 }}
               />
 
+              {tab === 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -1 }}>
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={() => {
+                      setForgotErr('')
+                      setForgotMsg('')
+                      setForgotOpen(true)
+                    }}
+                    sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' }}
+                  >
+                    Quên mật khẩu?
+                  </Button>
+                </Box>
+              )}
+
               {tab === 1 && (
                 <TextField
                   label="Xác nhận mật khẩu"
@@ -404,6 +433,79 @@ export default function LoginPage() {
           </Box>
         </Paper>
       </Box>
+
+      {/* Dialog Quên mật khẩu */}
+      <Dialog
+        open={forgotOpen}
+        onClose={() => setForgotOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3.5, p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>Đặt lại mật khẩu</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Nhập email tài khoản của bạn và mật khẩu mới để thiết lập lại.
+          </Typography>
+          {forgotErr && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{forgotErr}</Alert>}
+          {forgotMsg && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{forgotMsg}</Alert>}
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Email đã đăng ký"
+              type="email"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Mật khẩu mới"
+              type="password"
+              value={forgotPassword}
+              onChange={(e) => setForgotPassword(e.target.value)}
+              fullWidth
+              required
+              helperText="Tối thiểu 6 ký tự"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setForgotOpen(false)} sx={{ fontWeight: 600 }}>
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            disabled={forgotLoading}
+            onClick={async () => {
+              setForgotErr('')
+              setForgotMsg('')
+              if (!forgotEmail.trim() || !forgotPassword) {
+                setForgotErr('Vui lòng nhập email và mật khẩu mới')
+                return
+              }
+              if (forgotPassword.length < 6) {
+                setForgotErr('Mật khẩu mới phải từ 6 ký tự trở lên')
+                return
+              }
+              setForgotLoading(true)
+              try {
+                const res = await authApi.forgotPassword(forgotEmail.trim(), forgotPassword)
+                setForgotMsg(res.data.message || 'Đặt lại mật khẩu thành công!')
+                setTimeout(() => {
+                  setForgotOpen(false)
+                }, 1200)
+              } catch (err) {
+                setForgotErr(getErrorMessage(err))
+              } finally {
+                setForgotLoading(false)
+              }
+            }}
+            sx={{ borderRadius: 2.5, fontWeight: 700 }}
+          >
+            {forgotLoading ? 'Đang cập nhật...' : 'Xác nhận đặt lại'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

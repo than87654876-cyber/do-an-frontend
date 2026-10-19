@@ -26,6 +26,7 @@ import PageHeader from '../components/PageHeader'
 import { FormDialog, ConfirmDialog, MoneyInput } from '../components/FormDialog'
 import { goalApi, getErrorMessage } from '../api'
 import { fmtVND, fmtDate } from '../utils/format'
+import t from '../utils/i18n'
 
 function ProgressRing({ value, completed, size = 80 }) {
   const color = completed ? '#f59e0b' : '#2563eb'
@@ -196,22 +197,22 @@ export default function GoalsPage() {
   return (
     <Stack spacing={3.5}>
       <PageHeader
-        title="Mục tiêu tiết kiệm"
-        subtitle={`Đã tích lũy ${fmtVND(totalSaved)} / ${fmtVND(totalTarget)} · ${completedCount} mục tiêu đã hoàn thành`}
+        title={t('goalsHeaderTitle')}
+        subtitle={`${fmtVND(totalSaved)} / ${fmtVND(totalTarget)} · ${completedCount} ${t('goalsTitle').toLowerCase()}`}
         badge={
           completedCount > 0 ? (
             <Chip
               size="small"
               color="warning"
               icon={<EmojiEventsRoundedIcon sx={{ fontSize: '15px !important' }} />}
-              label={`${completedCount} mục tiêu đạt mốc!`}
+              label={`${completedCount} 🏆`}
               sx={{ fontWeight: 700 }}
             />
           ) : null
         }
         action={
           <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={openAdd}>
-            Mục tiêu mới
+            {t('createGoal')}
           </Button>
         }
       />

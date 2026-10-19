@@ -42,6 +42,7 @@ import PageCard from '../components/PageCard'
 import PageHeader from '../components/PageHeader'
 import { FormDialog, ConfirmDialog } from '../components/FormDialog'
 import { categoryApi, getErrorMessage } from '../api'
+import t from '../utils/i18n'
 
 const ICON_MAP = {
   restaurant: <FastfoodRoundedIcon fontSize="small" />,
@@ -193,11 +194,11 @@ export default function CategoriesPage() {
   return (
     <Stack spacing={3.5}>
       <PageHeader
-        title="Danh mục thu – chi"
-        subtitle={`Hiện có ${categories.length} danh mục · ${expenseCount} mục chi tiêu · ${incomeCount} mục thu nhập`}
+        title={t('categoriesHeaderTitle')}
+        subtitle={`${categories.length} ${t('navCategories').toLowerCase()} · ${expenseCount} ${t('filterExpense').toLowerCase()} · ${incomeCount} ${t('filterIncome').toLowerCase()}`}
         action={
           <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={openAdd}>
-            Thêm danh mục
+            {t('addNewCategory')}
           </Button>
         }
       />
@@ -223,9 +224,9 @@ export default function CategoriesPage() {
               },
             }}
           >
-            <Tab label={`Tất cả (${categories.length})`} value="all" />
-            <Tab label={`Khoản chi tiêu (${expenseCount})`} value="expense" />
-            <Tab label={`Khoản thu nhập (${incomeCount})`} value="income" />
+            <Tab label={`${t('filterAll')} (${categories.length})`} value="all" />
+            <Tab label={`${t('filterExpense')} (${expenseCount})`} value="expense" />
+            <Tab label={`${t('filterIncome')} (${incomeCount})`} value="income" />
           </Tabs>
         </Box>
 

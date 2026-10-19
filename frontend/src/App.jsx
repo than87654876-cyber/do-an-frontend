@@ -3,12 +3,15 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import AppTheme from './theme/AppTheme'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import WalletsPage from './pages/WalletsPage'
 import TransactionsPage from './pages/TransactionsPage'
 import CategoriesPage from './pages/CategoriesPage'
 import BudgetsPage from './pages/BudgetsPage'
 import GoalsPage from './pages/GoalsPage'
+import ReportsPage from './pages/ReportsPage'
+import NotificationsPage from './pages/NotificationsPage'
 import SystemStatsPage from './pages/SystemStatsPage'
 import UserManagementPage from './pages/UserManagementPage'
 import ProfilePage from './pages/ProfilePage'
@@ -37,6 +40,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={token ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/register" element={token ? <Navigate to="/" replace /> : <RegisterPage />} />
       <Route
         path="/"
         element={
@@ -51,6 +55,8 @@ function AppRoutes() {
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="budgets" element={<BudgetsPage />} />
         <Route path="goals" element={<GoalsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="admin/stats" element={<RequireAdmin><SystemStatsPage /></RequireAdmin>} />
         <Route path="admin/users" element={<RequireAdmin><UserManagementPage /></RequireAdmin>} />

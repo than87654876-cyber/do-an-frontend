@@ -31,6 +31,8 @@ import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded'
 import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded'
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded'
 import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded'
+import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded'
+import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
 import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded'
 import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
@@ -39,26 +41,30 @@ import AccountBalanceRoundedIcon from '@mui/icons-material/AccountBalanceRounded
 import { useAuth } from '../context/AuthContext'
 import { useThemeMode } from '../theme/AppTheme'
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded'
+import t from '../utils/i18n'
 
 const drawerWidth = 260
-
-const menuItems = [
-  { to: '/', label: 'Tổng quan', icon: <DashboardRoundedIcon /> },
-  { to: '/wallets', label: 'Ví tiền', icon: <AccountBalanceWalletRoundedIcon /> },
-  { to: '/transactions', label: 'Giao dịch', icon: <SwapHorizRoundedIcon /> },
-  { to: '/categories', label: 'Danh mục', icon: <CategoryRoundedIcon /> },
-  { to: '/budgets', label: 'Ngân sách', icon: <PieChartRoundedIcon /> },
-  { to: '/goals', label: 'Mục tiêu', icon: <TrackChangesRoundedIcon /> },
-]
-
-const adminItems = [
-  { to: '/admin/stats', label: 'Thống kê hệ thống', icon: <AssessmentRoundedIcon /> },
-  { to: '/admin/users', label: 'Quản lý tài khoản', icon: <PeopleAltRoundedIcon /> },
-]
 
 export default function Layout() {
   const { user, logout } = useAuth()
   const isAdmin = user?.role === 'admin'
+  const lang = user?.language || 'vi'
+
+  const menuItems = [
+    { to: '/', label: t('navDashboard', lang), icon: <DashboardRoundedIcon /> },
+    { to: '/wallets', label: t('navWallets', lang), icon: <AccountBalanceWalletRoundedIcon /> },
+    { to: '/transactions', label: t('navTransactions', lang), icon: <SwapHorizRoundedIcon /> },
+    { to: '/categories', label: t('navCategories', lang), icon: <CategoryRoundedIcon /> },
+    { to: '/budgets', label: t('navBudgets', lang), icon: <PieChartRoundedIcon /> },
+    { to: '/goals', label: t('navGoals', lang), icon: <TrackChangesRoundedIcon /> },
+    { to: '/reports', label: t('navReports', lang), icon: <BarChartRoundedIcon /> },
+    { to: '/notifications', label: t('navNotifications', lang), icon: <NotificationsRoundedIcon /> },
+  ]
+
+  const adminItems = [
+    { to: '/admin/stats', label: t('navSystemStats', lang), icon: <AssessmentRoundedIcon /> },
+    { to: '/admin/users', label: t('navUserManagement', lang), icon: <PeopleAltRoundedIcon /> },
+  ]
   const { mode, toggleMode } = useThemeMode()
   const theme = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
@@ -96,7 +102,7 @@ export default function Layout() {
               FinAdmin
             </Typography>
             <Typography variant="caption" color="text.secondary" fontWeight={600}>
-              Tài chính cá nhân
+              {t('tagline', lang)}
             </Typography>
           </Box>
         </Stack>
@@ -111,7 +117,7 @@ export default function Layout() {
           color="text.secondary"
           sx={{ px: 1.5, mb: 1, display: 'block', fontWeight: 700, letterSpacing: '0.08em', fontSize: '0.6875rem' }}
         >
-          MENU CHÍNH
+          {t('mainMenu', lang)}
         </Typography>
         {menuItems.map((m) => (
           <ListItemButton
@@ -132,8 +138,8 @@ export default function Layout() {
                 color: 'text.primary',
               },
               '&.active': {
-                background: (t) =>
-                  t.palette.mode === 'light'
+                background: (themeObj) =>
+                  themeObj.palette.mode === 'light'
                     ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)'
                     : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                 color: '#ffffff',
@@ -158,7 +164,7 @@ export default function Layout() {
               color="text.secondary"
               sx={{ px: 1.5, mb: 1, display: 'block', fontWeight: 700, letterSpacing: '0.08em', fontSize: '0.6875rem' }}
             >
-              QUẢN TRỊ HỆ THỐNG
+              {t('systemAdmin', lang)}
             </Typography>
             {adminItems.map((m) => (
               <ListItemButton
@@ -227,10 +233,10 @@ export default function Layout() {
                 {user?.name || user?.username || 'Người dùng'}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap display="block">
-                {isAdmin ? 'Quản trị viên' : user?.email || 'Thành viên'}
+                {isAdmin ? t('userRoleAdmin', lang) : user?.email || t('userRoleUser', lang)}
               </Typography>
             </Box>
-            <Tooltip title="Đăng xuất">
+            <Tooltip title={t('logout', lang)}>
               <IconButton size="small" onClick={handleLogout} sx={{ color: 'text.secondary' }}>
                 <LogoutRoundedIcon fontSize="small" />
               </IconButton>
@@ -300,7 +306,7 @@ export default function Layout() {
           )}
 
           {/* Dark / Light Mode Switch */}
-          <Tooltip title={mode === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}>
+          <Tooltip title={mode === 'light' ? t('darkMode', lang) : t('lightMode', lang)}>
             <IconButton onClick={toggleMode} sx={{ color: 'text.secondary' }}>
               {mode === 'light' ? <DarkModeRoundedIcon /> : <LightModeRoundedIcon />}
             </IconButton>
@@ -341,7 +347,7 @@ export default function Layout() {
                 {user?.email}
               </Typography>
             </Box>
-                        <Divider sx={{ my: 0.5 }} />
+            <Divider sx={{ my: 0.5 }} />
             <MenuItem
               onClick={() => {
                 setAnchorEl(null)
@@ -350,11 +356,11 @@ export default function Layout() {
               sx={{ borderRadius: 2 }}
             >
               <PersonRoundedIcon fontSize="small" sx={{ mr: 1.5 }} />
-              Hồ sơ cá nhân
+              {t('profile', lang)}
             </MenuItem>
             <MenuItem onClick={handleLogout} sx={{ color: 'error.main', borderRadius: 2 }}>
               <LogoutRoundedIcon fontSize="small" sx={{ mr: 1.5 }} />
-              Đăng xuất
+              {t('logout', lang)}
             </MenuItem>
           </Menu>
         </Toolbar>

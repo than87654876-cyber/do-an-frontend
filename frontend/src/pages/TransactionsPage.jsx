@@ -29,6 +29,7 @@ import PageHeader from '../components/PageHeader'
 import { FormDialog, ConfirmDialog, MoneyInput } from '../components/FormDialog'
 import { transactionApi, walletApi, categoryApi, getErrorMessage } from '../api'
 import { fmtVND, fmtDate } from '../utils/format'
+import t from '../utils/i18n'
 
 const emptyForm = {
   wallet_id: '',
@@ -183,11 +184,11 @@ export default function TransactionsPage() {
   return (
     <Stack spacing={3.5}>
       <PageHeader
-        title="Lịch sử giao dịch"
-        subtitle={`Hiển thị ${visible.length} giao dịch đã ghi nhận`}
+        title={t('transactionsHeaderTitle')}
+        subtitle={`${visible.length} ${t('navTransactions').toLowerCase()}`}
         action={
           <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={openAdd}>
-            Ghi giao dịch
+            {t('addTransaction')}
           </Button>
         }
       />
@@ -199,13 +200,13 @@ export default function TransactionsPage() {
             flex: 1,
             p: 2.25,
             borderRadius: 3.5,
-            bgcolor: (t) => alpha(t.palette.success.main, 0.08),
+            bgcolor: (tTheme) => alpha(tTheme.palette.success.main, 0.08),
             border: '1px solid',
-            borderColor: (t) => alpha(t.palette.success.main, 0.2),
+            borderColor: (tTheme) => alpha(tTheme.palette.success.main, 0.2),
           }}
         >
           <Typography variant="caption" color="success.main" fontWeight={700}>
-            TỔNG THU NHẬP
+            {t('totalIncome').toUpperCase()}
           </Typography>
           <Typography variant="h6" fontWeight={800} color="success.main" mt={0.25}>
             +{fmtVND(totalIncome)}
@@ -217,13 +218,13 @@ export default function TransactionsPage() {
             flex: 1,
             p: 2.25,
             borderRadius: 3.5,
-            bgcolor: (t) => alpha(t.palette.error.main, 0.08),
+            bgcolor: (tTheme) => alpha(tTheme.palette.error.main, 0.08),
             border: '1px solid',
-            borderColor: (t) => alpha(t.palette.error.main, 0.2),
+            borderColor: (tTheme) => alpha(tTheme.palette.error.main, 0.2),
           }}
         >
           <Typography variant="caption" color="error.main" fontWeight={700}>
-            TỔNG CHI TIÊU
+            {t('totalExpense').toUpperCase()}
           </Typography>
           <Typography variant="h6" fontWeight={800} color="error.main" mt={0.25}>
             −{fmtVND(totalExpense)}
@@ -235,13 +236,13 @@ export default function TransactionsPage() {
             flex: 1,
             p: 2.25,
             borderRadius: 3.5,
-            bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+            bgcolor: (tTheme) => alpha(tTheme.palette.primary.main, 0.08),
             border: '1px solid',
-            borderColor: (t) => alpha(t.palette.primary.main, 0.2),
+            borderColor: (tTheme) => alpha(tTheme.palette.primary.main, 0.2),
           }}
         >
           <Typography variant="caption" color="primary.main" fontWeight={700}>
-            CÂN ĐỐI RÒNG
+            {t('netDifference').toUpperCase()}
           </Typography>
           <Typography
             variant="h6"

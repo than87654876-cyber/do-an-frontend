@@ -6,7 +6,9 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import LoginScreen from './src/screens/LoginScreen'
 import DashboardScreen from './src/screens/DashboardScreen'
+import TransactionsScreen from './src/screens/TransactionsScreen'
 import WalletsScreen from './src/screens/WalletsScreen'
+import PlansScreen from './src/screens/PlansScreen'
 import AccountScreen from './src/screens/AccountScreen'
 import { authApi, setUnauthorizedHandler } from './src/api'
 
@@ -75,9 +77,19 @@ export default function App() {
           options={{ title: 'Tổng quan', tabBarIcon: tabIcon('🏠') }}
         />
         <Tab.Screen
+          name="Transactions"
+          component={TransactionsScreen}
+          options={{ title: 'Giao dịch', tabBarIcon: tabIcon('💳') }}
+        />
+        <Tab.Screen
           name="Wallets"
           component={WalletsScreen}
           options={{ title: 'Ví tiền', tabBarIcon: tabIcon('👛') }}
+        />
+        <Tab.Screen
+          name="Plans"
+          component={PlansScreen}
+          options={{ title: 'Kế hoạch', tabBarIcon: tabIcon('🎯') }}
         />
         <Tab.Screen name="Account" options={{ title: 'Tài khoản', tabBarIcon: tabIcon('👤') }}>
           {() => <AccountScreen user={user} onLogout={logout} />}

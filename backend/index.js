@@ -16,6 +16,9 @@ const SavingsGoal = require('./models/SavingsGoal');
 const adminRoutes = require('./routes/adminRoutes');
 const seedAdmin = require('./seedAdmin');
 const accountRoutes = require('./routes/accountRoutes');
+const Notification = require('./models/Notification');
+const notificationRoutes = require('./routes/notificationRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
@@ -29,6 +32,8 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/savings-goals', savingsGoalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/account', accountRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get("/", (req, res) => {
     res.json({ message: "BackEnd đang chạy" });

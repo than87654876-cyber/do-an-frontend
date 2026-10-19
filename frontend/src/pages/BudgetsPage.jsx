@@ -26,6 +26,7 @@ import PageHeader from '../components/PageHeader'
 import { FormDialog, ConfirmDialog, MoneyInput } from '../components/FormDialog'
 import { budgetApi, categoryApi, getErrorMessage } from '../api'
 import { fmtVND, fmtDate } from '../utils/format'
+import t from '../utils/i18n'
 
 function CircularProgressMini({ value, color, size = 76 }) {
   const r = (size - 12) / 2
@@ -181,13 +182,13 @@ export default function BudgetsPage() {
   return (
     <Stack spacing={3.5}>
       <PageHeader
-        title="Quản lý ngân sách"
+        title={t('budgetsHeaderTitle')}
         subtitle={
           budgets.length
-            ? `Đang theo dõi ${budgets.length} ngân sách${
-                overCount > 0 ? ` · ⚠️ Có ${overCount} ngân sách đã vượt hạn` : ' · Tất cả trong tầm kiểm soát'
+            ? `${budgets.length} ${t('navBudgets').toLowerCase()}${
+                overCount > 0 ? ` · ⚠️ ${overCount} ${t('overBudgetWarning')}` : ''
               }`
-            : 'Đặt giới hạn chi tiêu theo danh mục để kiểm soát tài chính'
+            : t('budgetsHeaderSub')
         }
         badge={
           overCount > 0 ? (
@@ -202,7 +203,7 @@ export default function BudgetsPage() {
         }
         action={
           <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={openAdd}>
-            Tạo ngân sách
+            {t('createBudget')}
           </Button>
         }
       />

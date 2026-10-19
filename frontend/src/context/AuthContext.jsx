@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 import { authApi } from '../api'
 
 const AuthContext = createContext(null)
@@ -23,19 +23,20 @@ export function AuthProvider({ children }) {
     return newUser
   }
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setToken(null)
     setUser(null)
-  }
-  const updateUser = (changes) => {
-  setUser((prev) => {
-    const next = { ...prev, ...changes }
-    localStorage.setItem('user', JSON.stringify(next))
-    return next
-  })
-}
+  }, [])
+
+  const updateUser = useCallback((changes) => {
+    setUser((prev) => {
+      const next = { ...prev, ...changes }
+      localStorage.setItem('user', JSON.stringify(next))
+      return next
+    })
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, updateUser }}>

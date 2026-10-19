@@ -20,18 +20,10 @@ import { useThemeMode } from '../theme/AppTheme'
 import { accountApi } from '../api'
 import { getErrorMessage } from '../api/http'
 import { fmtDate } from '../utils/format'
-
-const LANGUAGES = [
-  { value: 'vi', label: 'Tiếng Việt' },
-  { value: 'en', label: 'English' },
-]
-const CURRENCIES = [
-  { value: 'VND', label: 'VND (đồng)' },
-  { value: 'USD', label: 'USD (đô la Mỹ)' },
-]
+import t from '../utils/i18n'
 
 export default function ProfilePage() {
-  const { updateUser } = useAuth()
+  const { user, updateUser } = useAuth()
   const { mode, toggleMode } = useThemeMode()
 
   const [loading, setLoading] = useState(true)
@@ -47,24 +39,46 @@ export default function ProfilePage() {
 
   const [snack, setSnack] = useState(null)
 
+  // Ngôn ngữ hiển thị giao diện PHẢI theo cài đặt đã lưu của user (CHỈ ĐỔI KHI BẤM LƯU THAY ĐỔI)
+  const currentLang = user?.language || 'vi'
+
+  const LANGUAGES = [
+    { value: 'vi', label: currentLang === 'en' ? 'Vietnamese (Tiếng Việt)' : 'Tiếng Việt' },
+    { value: 'en', label: currentLang === 'en' ? 'English' : 'Tiếng Anh (English)' },
+  ]
+  const CURRENCIES = [
+    { value: 'VND', label: 'VND (₫)' },
+    { value: 'USD', label: 'USD ($)' },
+  ]
+
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
       const res = await accountApi.getProfile()
       setProfile(res.data)
+      const dbLang = res.data.language || 'vi'
+      const dbCurr = res.data.currency || 'VND'
       setForm({
+        username: res.data.username || '',
+        email: res.data.email || '',
+        language: dbLang,
+        currency: dbCurr,
+      })
+      // Đồng bộ thông tin đã lưu từ database vào session
+      updateUser({
+        name: res.data.username,
         username: res.data.username,
         email: res.data.email,
-        language: res.data.language || 'vi',
-        currency: res.data.currency || 'VND',
+        language: dbLang,
+        currency: dbCurr,
       })
     } catch (e) {
       setError(getErrorMessage(e))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [updateUser])
 
   useEffect(() => {
     load()
@@ -74,15 +88,25 @@ export default function ProfilePage() {
     e.preventDefault()
     setFormError('')
     if (!form.username.trim() || !form.email.trim()) {
-      setFormError('Tên và email không được để trống')
+      setFormError(t('emptyNameEmail', currentLang))
       return
     }
     setSaving(true)
     try {
       const res = await accountApi.updateProfile(form)
       setProfile(res.data)
-      updateUser({ name: res.data.username, username: res.data.username, email: res.data.email })
-      setSnack({ msg: 'Đã lưu thông tin', severity: 'success' })
+      // Khi bấm lưu thành công thì mới cập nhật toàn bộ web sang ngôn ngữ và tiền tệ mới
+      updateUser({
+        name: res.data.username,
+        username: res.data.username,
+        email: res.data.email,
+        language: res.data.language,
+        currency: res.data.currency,
+      })
+      setSnack({
+        msg: t('savedSuccess', res.data.language),
+        severity: 'success',
+      })
     } catch (err) {
       setFormError(getErrorMessage(err))
     } finally {
@@ -100,18 +124,18 @@ export default function ProfilePage() {
     e.preventDefault()
     setPwError('')
     if (pw.next.length < 6) {
-      setPwError('Mật khẩu mới phải có ít nhất 6 ký tự')
+      setPwError(t('shortPassword', currentLang))
       return
     }
     if (pw.next !== pw.confirm) {
-      setPwError('Mật khẩu xác nhận không khớp')
+      setPwError(t('passwordNotMatch', currentLang))
       return
     }
     setPwSaving(true)
     try {
       await accountApi.changePassword(pw.current, pw.next)
       setPw({ current: '', next: '', confirm: '' })
-      setSnack({ msg: 'Đổi mật khẩu thành công', severity: 'success' })
+      setSnack({ msg: t('passwordChangedSuccess', currentLang), severity: 'success' })
     } catch (err) {
       setPwError(getErrorMessage(err))
     } finally {
@@ -122,11 +146,11 @@ export default function ProfilePage() {
   return (
     <Stack spacing={3.5}>
       <PageHeader
-        title="Hồ sơ cá nhân"
-        subtitle="Quản lý thông tin tài khoản, cài đặt và mật khẩu"
+        title={t('profileTitle', currentLang)}
+        subtitle={t('profileSub', currentLang)}
       />
 
-      <PageCard title="Thông tin tài khoản" loading={loading} error={error} onRetry={load}>
+      <PageCard title={t('accountInfo', currentLang)} loading={loading} error={error} onRetry={load}>
         {profile && (
           <Stack component="form" onSubmit={saveProfile} spacing={2.5}>
             <Stack direction="row" spacing={2} alignItems="center">
@@ -143,18 +167,18 @@ export default function ProfilePage() {
               <Box>
                 <Typography fontWeight={700}>{profile.username}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Tham gia {fmtDate(profile.createdAt)}
+                  {t('joinedDate', currentLang)} {fmtDate(profile.createdAt, currentLang)}
                 </Typography>
               </Box>
               {profile.role === 'admin' && (
-                <Chip size="small" color="secondary" label="Quản trị" sx={{ fontWeight: 700 }} />
+                <Chip size="small" color="secondary" label={t('adminBadge', currentLang)} sx={{ fontWeight: 700 }} />
               )}
             </Stack>
 
             {formError && <Alert severity="error">{formError}</Alert>}
 
             <TextField
-              label="Tên hiển thị"
+              label={t('displayName', currentLang)}
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               fullWidth
@@ -169,9 +193,12 @@ export default function ProfilePage() {
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5}>
               <TextField
                 select
-                label="Ngôn ngữ"
+                label={t('language', currentLang)}
                 value={form.language}
-                onChange={(e) => setForm({ ...form, language: e.target.value })}
+                onChange={(e) => {
+                  const newLang = e.target.value
+                  setForm({ ...form, language: newLang })
+                }}
                 fullWidth
               >
                 {LANGUAGES.map((l) => (
@@ -182,9 +209,12 @@ export default function ProfilePage() {
               </TextField>
               <TextField
                 select
-                label="Đơn vị tiền tệ"
+                label={t('currency', currentLang)}
                 value={form.currency}
-                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                onChange={(e) => {
+                  const newCurr = e.target.value
+                  setForm({ ...form, currency: newCurr })
+                }}
                 fullWidth
               >
                 {CURRENCIES.map((c) => (
@@ -197,37 +227,37 @@ export default function ProfilePage() {
 
             <FormControlLabel
               control={<Switch checked={mode === 'dark'} onChange={changeDarkMode} />}
-              label="Chế độ tối"
+              label={t('darkModeLabel', currentLang)}
             />
 
             <Box>
               <Button type="submit" variant="contained" disabled={saving}>
-                {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                {saving ? t('saving', currentLang) : t('saveChanges', currentLang)}
               </Button>
             </Box>
           </Stack>
         )}
       </PageCard>
 
-      <PageCard title="Đổi mật khẩu" subtitle="Nhập mật khẩu hiện tại để xác nhận">
+      <PageCard title={t('changePassword', currentLang)} subtitle={t('changePasswordSub', currentLang)}>
         <Stack component="form" onSubmit={savePassword} spacing={2.5} sx={{ maxWidth: 420 }}>
           {pwError && <Alert severity="error">{pwError}</Alert>}
           <TextField
-            label="Mật khẩu hiện tại"
+            label={t('currentPassword', currentLang)}
             type="password"
             value={pw.current}
             onChange={(e) => setPw({ ...pw, current: e.target.value })}
             fullWidth
           />
           <TextField
-            label="Mật khẩu mới"
+            label={t('newPassword', currentLang)}
             type="password"
             value={pw.next}
             onChange={(e) => setPw({ ...pw, next: e.target.value })}
             fullWidth
           />
           <TextField
-            label="Nhập lại mật khẩu mới"
+            label={t('confirmNewPassword', currentLang)}
             type="password"
             value={pw.confirm}
             onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
@@ -235,7 +265,7 @@ export default function ProfilePage() {
           />
           <Box>
             <Button type="submit" variant="contained" disabled={pwSaving || !pw.current}>
-              {pwSaving ? 'Đang đổi...' : 'Đổi mật khẩu'}
+              {pwSaving ? t('updatingPassword', currentLang) : t('savePasswordBtn', currentLang)}
             </Button>
           </Box>
         </Stack>

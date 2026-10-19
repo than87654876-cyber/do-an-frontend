@@ -47,16 +47,6 @@ const User = sequelize.define('User', {
         type: DataTypes.ENUM('admin', 'user'),
         allowNull: false,
         defaultValue: 'user',
-        role: {
-        type: DataTypes.ENUM('user', 'admin'),
-        allowNull: false,
-        defaultValue: 'user',
-        },
-        status: {
-        type: DataTypes.ENUM('active', 'locked'),
-        allowNull: false,
-        defaultValue: 'active',
-        },
     },
     // Trạng thái tài khoản: active = bình thường, locked = bị admin khóa
     status: {

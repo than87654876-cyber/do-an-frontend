@@ -9,6 +9,11 @@ import {
   Chip,
   Skeleton,
   Button,
+  FormControl,
+  Select,
+  MenuItem,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material'
 import { Link } from 'react-router-dom'
 import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded'
@@ -21,14 +26,23 @@ import PageHeader from '../components/PageHeader'
 import { StatCard, SimpleBarChart, MONTH_NAMES } from '../components/Chart'
 import { walletApi, transactionApi, budgetApi, goalApi } from '../api'
 import { fmtVND, fmtDate } from '../utils/format'
+import { useAuth } from '../context/AuthContext'
+import t from '../utils/i18n'
 
 export default function DashboardPage() {
+  const { user } = useAuth()
+  const lang = user?.language || 'vi'
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [wallets, setWallets] = useState([])
   const [transactions, setTransactions] = useState([])
   const [budgets, setBudgets] = useState([])
   const [goals, setGoals] = useState([])
+
+  // Bộ lọc thời gian: 'month' (theo tháng/năm) hoặc 'year' (theo cả năm)
+  const [filterMode, setFilterMode] = useState('month')
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
 
   const loadAll = useCallback(async () => {
     setLoading(true)
@@ -84,31 +98,76 @@ export default function DashboardPage() {
 
   const now = new Date()
   const hour = now.getHours()
-  const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
+  const greeting = hour < 12 ? t('greetingMorning', lang) : hour < 18 ? t('greetingAfternoon', lang) : t('greetingEvening', lang)
   const userName =
     JSON.parse(localStorage.getItem('user') || '{}')?.name?.split(' ').slice(-1)[0] || ''
 
   const totalBalance = wallets.reduce((s, w) => s + Number(w.balance), 0)
-  const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const monthTx = transactions.filter((t) => (t.transaction_date || '').startsWith(monthPrefix))
-  const monthIncome = monthTx
+
+  // Tính toán dữ liệu theo bộ lọc đã chọn (tháng/năm hoặc cả năm)
+  let filterPrefix
+  let incomeTitle
+  let incomeSub
+  let expenseTitle
+  let expenseSub
+  let chartTitle
+  let chartSub
+  const chartData = []
+
+  if (filterMode === 'month') {
+    filterPrefix = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
+    incomeTitle = `${t('incomeTitle', lang)} T${selectedMonth}/${selectedYear}`
+    incomeSub = `${t('incomeSubMonth', lang)} ${selectedMonth}/${selectedYear}`
+    expenseTitle = `${t('expenseTitle', lang)} T${selectedMonth}/${selectedYear}`
+    expenseSub = `${t('expenseSubMonth', lang)} ${selectedMonth}/${selectedYear}`
+    chartTitle = lang === 'en'
+      ? `Cash Flow (6 months to ${selectedMonth}/${selectedYear})`
+      : `Dòng tiền Thu – Chi (6 tháng đến T${selectedMonth}/${selectedYear})`
+    chartSub = lang === 'en'
+      ? `Comparison of income and expenses up to ${selectedMonth}/${selectedYear}`
+      : `So sánh tổng quan thu chi 6 tháng gần nhất tính đến T${selectedMonth}/${selectedYear}`
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(selectedYear, selectedMonth - 1 - i, 1)
+      const p = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const txs = transactions.filter((t) => (t.transaction_date || '').startsWith(p))
+      chartData.push({
+        month: MONTH_NAMES[d.getMonth()] + (d.getFullYear() !== selectedYear ? `/${String(d.getFullYear()).slice(-2)}` : ''),
+        income: txs.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0),
+        expense: txs.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0),
+      })
+    }
+  } else {
+    filterPrefix = `${selectedYear}-`
+    incomeTitle = `${t('incomeTitle', lang)} ${selectedYear}`
+    incomeSub = `${t('incomeSubYear', lang)} ${selectedYear}`
+    expenseTitle = `${t('expenseTitle', lang)} ${selectedYear}`
+    expenseSub = `${t('expenseSubYear', lang)} ${selectedYear}`
+    chartTitle = lang === 'en'
+      ? `Cash Flow 12 Months ${selectedYear}`
+      : `Dòng tiền Thu – Chi 12 tháng năm ${selectedYear}`
+    chartSub = lang === 'en'
+      ? `Overview comparing income and expenses across 12 months in ${selectedYear}`
+      : `So sánh tổng quan thu chi cả 12 tháng của năm ${selectedYear}`
+
+    for (let i = 0; i < 12; i++) {
+      const p = `${selectedYear}-${String(i + 1).padStart(2, '0')}`
+      const txs = transactions.filter((t) => (t.transaction_date || '').startsWith(p))
+      chartData.push({
+        month: MONTH_NAMES[i],
+        income: txs.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0),
+        expense: txs.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0),
+      })
+    }
+  }
+
+  const periodTx = transactions.filter((t) => (t.transaction_date || '').startsWith(filterPrefix))
+  const periodIncome = periodTx
     .filter((t) => t.type === 'income')
     .reduce((s, t) => s + Number(t.amount), 0)
-  const monthExpense = monthTx
+  const periodExpense = periodTx
     .filter((t) => t.type === 'expense')
     .reduce((s, t) => s + Number(t.amount), 0)
-
-  const months = []
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const prefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const txs = transactions.filter((t) => (t.transaction_date || '').startsWith(prefix))
-    months.push({
-      month: MONTH_NAMES[d.getMonth()],
-      income: txs.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0),
-      expense: txs.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0),
-    })
-  }
 
   const savingTotal = goals.reduce((s, g) => s + Number(g.current_amount), 0)
   const activeGoals = goals.filter((g) => g.status === 'in_progress').length
@@ -118,67 +177,118 @@ export default function DashboardPage() {
     <Stack spacing={3.5}>
       <PageHeader
         title={`${greeting}${userName ? ', ' + userName : ''} 👋`}
-        subtitle={`Hôm nay là ${now.toLocaleDateString('vi-VN', {
+        subtitle={now.toLocaleDateString(lang === 'en' ? 'en-US' : 'vi-VN', {
           weekday: 'long',
           day: 'numeric',
           month: 'long',
           year: 'numeric',
-        })}`}
+        })}
         badge={
           overBudgets > 0 ? (
             <Chip
               size="small"
               color="error"
               icon={<WarningAmberRoundedIcon sx={{ fontSize: '15px !important' }} />}
-              label={`${overBudgets} ngân sách vượt hạn`}
+              label={`${overBudgets} ${t('overBudgetWarning', lang)}`}
               sx={{ fontWeight: 700 }}
             />
           ) : null
+        }
+        action={
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+            {/* Chế độ lọc: Theo Tháng hoặc Theo Năm */}
+            <ToggleButtonGroup
+              value={filterMode}
+              exclusive
+              onChange={(_, val) => val && setFilterMode(val)}
+              size="small"
+              sx={{ bgcolor: 'background.paper', borderRadius: 2.5 }}
+            >
+              <ToggleButton value="month" sx={{ px: 1.5, py: 0.5, fontWeight: 700, fontSize: '0.8125rem' }}>
+                {t('byMonth', lang)}
+              </ToggleButton>
+              <ToggleButton value="year" sx={{ px: 1.5, py: 0.5, fontWeight: 700, fontSize: '0.8125rem' }}>
+                {t('byYear', lang)}
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            {/* Chọn Năm */}
+            <FormControl size="small" sx={{ minWidth: 105 }}>
+              <Select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                sx={{ borderRadius: 2.5, fontWeight: 700, bgcolor: 'background.paper', fontSize: '0.875rem' }}
+              >
+                {[now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
+                  <MenuItem key={y} value={y} sx={{ fontWeight: 600 }}>
+                    {t('yearLabel', lang)} {y}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Chọn Tháng (nếu ở chế độ theo tháng) */}
+            {filterMode === 'month' && (
+              <FormControl size="small" sx={{ minWidth: 115 }}>
+                <Select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  sx={{ borderRadius: 2.5, fontWeight: 700, bgcolor: 'background.paper', fontSize: '0.875rem' }}
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <MenuItem key={m} value={m} sx={{ fontWeight: 600 }}>
+                      {t('monthLabel', lang)} {m}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Stack>
         }
       />
 
       {/* 4 Cards Thống kê tài chính */}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} flexWrap="wrap">
         <StatCard
-          title="Tổng số dư"
+          title={t('totalBalance', lang)}
           value={fmtVND(totalBalance)}
           icon={AccountBalanceWalletRoundedIcon}
           gradient="linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)"
-          sub={`${wallets.length} ví đang hoạt động`}
+          sub={`${wallets.length} ${t('activeWallets', lang)}`}
         />
         <StatCard
-          title={`Thu nhập T${now.getMonth() + 1}`}
-          value={fmtVND(monthIncome)}
+          title={incomeTitle}
+          value={fmtVND(periodIncome)}
           icon={TrendingUpRoundedIcon}
           gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
-          sub="Tổng thu trong tháng này"
+          sub={incomeSub}
         />
         <StatCard
-          title={`Chi tiêu T${now.getMonth() + 1}`}
-          value={fmtVND(monthExpense)}
+          title={expenseTitle}
+          value={fmtVND(periodExpense)}
           icon={TrendingDownRoundedIcon}
           gradient="linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)"
-          sub="Tổng chi trong tháng này"
+          sub={expenseSub}
         />
         <StatCard
-          title="Đang tích lũy"
+          title={t('accumulating', lang)}
           value={fmtVND(savingTotal)}
           icon={TrackChangesRoundedIcon}
           gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-          sub={`${activeGoals} mục tiêu đang thực hiện`}
+          sub={`${activeGoals} ${t('activeGoalsCount', lang)}`}
         />
       </Stack>
 
-      {/* Biểu đồ thu chi 6 tháng */}
+      {/* Biểu đồ thu chi */}
       <Card elevation={0} sx={{ borderRadius: 4 }}>
         <CardContent sx={{ p: 3.5 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
             <Box>
               <Typography variant="h6" fontWeight={800}>
-                Dòng tiền Thu – Chi (6 tháng gần nhất)
+                {chartTitle}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                So sánh tổng quan giữa nguồn thu và các khoản chi
+                {chartSub}
               </Typography>
             </Box>
             <Button
@@ -188,10 +298,10 @@ export default function DashboardPage() {
               endIcon={<ArrowForwardRoundedIcon />}
               sx={{ fontWeight: 600 }}
             >
-              Xem giao dịch
+              {t('viewTransactions', lang)}
             </Button>
           </Stack>
-          <SimpleBarChart data={months} />
+          <SimpleBarChart data={chartData} />
         </CardContent>
       </Card>
 
@@ -203,20 +313,20 @@ export default function DashboardPage() {
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2.5}>
               <Box>
                 <Typography variant="h6" fontWeight={800}>
-                  Kiểm soát ngân sách
+                  {t('budgetControl', lang)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Theo dõi hạn mức chi tiêu của từng danh mục
+                  {t('budgetSub', lang)}
                 </Typography>
               </Box>
               <Button component={Link} to="/budgets" size="small" endIcon={<ArrowForwardRoundedIcon />}>
-                Chi tiết
+                {t('details', lang)}
               </Button>
             </Stack>
 
             {budgets.length === 0 ? (
               <Typography variant="body2" color="text.secondary" py={3} textAlign="center">
-                Chưa thiết lập ngân sách nào. Hãy đặt hạn mức để kiểm soát chi tiêu!
+                {t('noBudget', lang)}
               </Typography>
             ) : (
               <Stack spacing={2.5}>
@@ -265,20 +375,20 @@ export default function DashboardPage() {
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2.5}>
               <Box>
                 <Typography variant="h6" fontWeight={800}>
-                  Mục tiêu tích lũy
+                  {t('savingsGoal', lang)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Tiến độ hoàn thành các dự định tương lai
+                  {t('savingsSub', lang)}
                 </Typography>
               </Box>
               <Button component={Link} to="/goals" size="small" endIcon={<ArrowForwardRoundedIcon />}>
-                Chi tiết
+                {t('details', lang)}
               </Button>
             </Stack>
 
             {goals.length === 0 ? (
               <Typography variant="body2" color="text.secondary" py={3} textAlign="center">
-                Chưa có mục tiêu tiết kiệm. Hãy đặt mục tiêu để tích lũy ngay hôm nay!
+                {t('noGoal', lang)}
               </Typography>
             ) : (
               <Stack spacing={2.5}>

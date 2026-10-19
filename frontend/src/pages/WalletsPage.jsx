@@ -26,7 +26,8 @@ import PageCard from '../components/PageCard'
 import PageHeader from '../components/PageHeader'
 import { FormDialog, ConfirmDialog, MoneyInput } from '../components/FormDialog'
 import { walletApi, getErrorMessage } from '../api'
-import { fmtVND } from '../utils/format'
+import { fmtVND, getWalletTypeLabel } from '../utils/format'
+import t from '../utils/i18n'
 
 const TYPE_META = {
   cash: {
@@ -167,8 +168,8 @@ export default function WalletsPage() {
   return (
     <Stack spacing={3.5}>
       <PageHeader
-        title="Quản lý ví tiền"
-        subtitle={`Hiện có ${wallets.length} ví hoạt động · Tổng số dư: ${fmtVND(total)}`}
+        title={t('walletsHeaderTitle')}
+        subtitle={`${t('walletsSubPrefix')} ${wallets.length} ${t('activeWalletsUnit')} · ${t('totalBalanceLabel')}: ${fmtVND(total)}`}
         action={
           <Stack direction="row" spacing={1.5}>
             <Button
@@ -177,10 +178,10 @@ export default function WalletsPage() {
               onClick={() => setTransferOpen(true)}
               disabled={wallets.length < 2}
             >
-              Chuyển tiền
+              {t('transferMoney')}
             </Button>
             <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={openAdd}>
-              Thêm ví mới
+              {t('addNewWallet')}
             </Button>
           </Stack>
         }
